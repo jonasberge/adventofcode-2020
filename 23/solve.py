@@ -5,7 +5,7 @@ from sys import stdin
 
 
 data = stdin.read().strip()
-cups = [int(c) for c in data]
+labels = [int(c) for c in data]
 
 class Cup:
     def __init__(self, label):
@@ -69,9 +69,43 @@ class Circle:
         for cup in head:
             self.index[cup.label] = cup
 
+class Game:
+    def __init__(self, circle):
+        self.circle = circle
+
+    def step(self):
+        circle = self.circle
+
+        # pick three cups
+        sliced = Circle(circle.slice(3))
+
+        # select next label that is not sliced
+        destination = next_label(circle.current.label)
+        while destination in sliced.index:
+            destination = next_label(destination)
+
+        # insert picked and increment current
+        current = circle.current
+        circle.current = circle.index[destination]
+        circle.insert(sliced.head)
+        circle.current = current.next
+
+def create_circle(labels):
+    head = Cup(labels[0])
+    curr = head
+    for cup in labels[1:]:
+        temp = Cup(cup)
+        curr.next = temp
+        curr = temp
+    curr.next = head
+    return Circle(head)
+
+def create_game(labels):
+    return Game(create_circle(labels))
+
 def next_label(label):
     if label == 1:
-        return len(cups)
+        return len(labels)
     return label - 1
 
 def print_list(head):
@@ -79,33 +113,37 @@ def print_list(head):
         print(cup.label, end=' ')
     print()
 
-# create circle
-head = Cup(cups[0])
-curr = head
-for cup in cups[1:]:
-    temp = Cup(cup)
-    curr.next = temp
-    curr = temp
-curr.next = head
-circle = Circle(head)
 
+game = create_game(labels)
 for _ in range(100):
-    # pick three cups
-    sliced = Circle(circle.slice(3))
+    game.step()
 
-    # select next label that is not sliced
-    destination = next_label(circle.current.label)
-    while destination in sliced.index:
-        destination = next_label(destination)
+ordering = [cup.label for cup in game.circle.index[1]]
+result = ''.join([str(l) for l in ordering])[1:]
 
-    # insert picked and increment current
-    current = circle.current
-    circle.current = circle.index[destination]
-    circle.insert(sliced.head)
-    circle.current = current.next
+print('1:', result)
 
-labels = [cup.label for cup in circle.index[1]]
-result = ''.join([str(l) for l in labels])[1:]
 
-print(result)
+labels.extend(range(max(labels) + 1, 1000000 + 1))
+game = create_game(labels)
+
+# may take a minute...
+for _ in range(10000000):
+    game.step()
+one = game.circle.index[1]
+a, b = one.next.label, one.next.next.label
+result = a * b
+
+print('2:', result)
+
+
+
+
+
+
+
+
+
+
+
 
