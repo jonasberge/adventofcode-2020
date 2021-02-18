@@ -60,14 +60,10 @@ class Circle:
 
     def slice(self, n):
         sliced = self.current.slice(n)
-        for cup in sliced:
-            del self.index[cup.label]
         return sliced
 
     def insert(self, head):
         self.current.insert(head)
-        for cup in head:
-            self.index[cup.label] = cup
 
 class Game:
     def __init__(self, circle):
