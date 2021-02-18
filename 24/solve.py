@@ -6,37 +6,39 @@ from sys import stdin
 
 data = [line.strip() for line in stdin.readlines()]
 
-
 # store integer coordinates of tiles
 # https://en.wikipedia.org/wiki/Hexagonal_tiling
 # https://socratic.org/questions/what-is-the-area-of-a-hexagon-where-all-sides-are-8-cm
 # distance of centers horizontally (e, w): (2c, 0) = (x, y) offsets
 # distance of centers diagonally (ne, nw, ...): (1c, 3c/2)
 class Tile:
-    def __init__(self):
-        self.x = 0
-        self.y = 0
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
 
-    @property
-    def pos(self):
-        return (self.x, self.y)
-
-    def step(self, where):
+    def neighbour(self, where):
+        x, y = self.x, self.y
         # use integers instead of floats
         if where == 'e':
-            self.x -= 4 # 2c
-            return
-        if where == 'w':
-            self.x += 4 # 2c
-            return
-        if 'e' in where: self.x -= 2 # 1c
-        if 'w' in where: self.x += 2 # 1c
-        if 'n' in where: self.y += 3 # 3c/2
-        if 's' in where: self.y -= 3 # 3c/2
+            x -= 4 # 2c
+        elif where == 'w':
+            x += 4 # 2c
+        else:
+            if 'e' in where: x -= 2 # 1c
+            if 'w' in where: x += 2 # 1c
+            if 'n' in where: y += 3 # 3c/2
+            if 's' in where: y -= 3 # 3c/2
+        return Tile(x, y)
 
-    def __repr__(self):
-        return 'Tile({}, {})'.format(self.x, self.y)
+    def neighbours(self):
+        return set([
+            self.neighbour('e'), self.neighbour('w'),
+            self.neighbour('ne'), self.neighbour('nw'),
+            self.neighbour('se'), self.neighbour('sw')
+        ])
 
+    def __eq__(self, other): return self.x == other.x and self.y == other.y
+    def __hash__(self): return hash((self.x, self.y))
 
 def iterate_steps(line):
     chars = deque(line)
@@ -51,11 +53,26 @@ blacks = set()
 for line in data:
     tile = Tile()
     for direction in iterate_steps(line):
-        tile.step(direction)
-    if tile.pos in blacks:
-        blacks.remove(tile.pos)
+        tile = tile.neighbour(direction)
+    if tile in blacks:
+        blacks.remove(tile)
     else:
-        blacks.add(tile.pos)
+        blacks.add(tile)
 
 
-print(len(blacks))
+print('1:', len(blacks))
+
+
+for _ in range(100):
+    new_blacks = set()
+    for tile in blacks:
+        neighbours = tile.neighbours()
+        if len(neighbours & blacks) == 1:
+            new_blacks.add(tile)
+        for neighbour in neighbours:
+            if len(neighbour.neighbours() & blacks) == 2:
+                new_blacks.add(neighbour)
+    blacks = new_blacks
+
+print('2:', len(blacks))
+
